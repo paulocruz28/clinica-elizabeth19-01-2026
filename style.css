@@ -2,17 +2,25 @@
 :root {
     --primary-color: #D4AF37;
     --secondary-color: #333333;
-    --bg-light: #F9F9F9;
+    
+    /* --- MUDE AQUI (Cor de fundo das seções alternadas) --- */
+    --bg-light: #F5F0EB;  /* Era #F9F9F9 */
+    
     --white: #FFFFFF;
     --text-color: #555555;
     --font-title: 'Playfair Display', serif;
     --font-body: 'Lato', sans-serif;
 }
 
-/* --- RESET --- */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { font-family: var(--font-body); color: var(--text-color); line-height: 1.6; }
+/* --- E MUDE AQUI TAMBÉM (Cor de fundo geral do site) --- */
+body { 
+    font-family: var(--font-body); 
+    color: var(--text-color); 
+    line-height: 1.6;
+    
+    /* Adicione esta linha para o fundo geral ficar neutro também */
+    background-color: #FDFBF7; /* Um tom bem clarinho, quase branco */
+}
 
 /* --- UTILITARIOS --- */
 .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
@@ -101,11 +109,53 @@ body { font-family: var(--font-body); color: var(--text-color); line-height: 1.6
 .card h3 { font-family: var(--font-title); color: var(--primary-color); margin-bottom: 15px; }
 img { max-width: 100%; border-radius: 8px; display: block; }
 
-/* --- PROCEDIMENTOS --- */
-.grid-procedimentos { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; }
-.proc-item { text-align: center; width: 150px; }
-.proc-item img { border-radius: 50%; margin: 0 auto 15px; border: 3px solid var(--primary-color); padding: 5px; transition: transform 0.3s; }
-.proc-item:hover img { transform: scale(1.1); }
+/* --- NOVO CSS PARA PROCEDIMENTOS (Substitua o atual) --- */
+
+.grid-procedimentos {
+    display: grid;
+    /* Define um grid com 6 colunas de tamanhos iguais. */
+    /* Isso força os 6 itens a ficarem na mesma linha. */
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px; /* Espaço entre os itens */
+    justify-content: center;
+    align-items: start; /* Alinha os itens no topo */
+}
+
+/* --- ADICIONE ISTO AO SEU style.css PARA TORNAR OS ÍCONES REDONDOS NOVAMENTE --- */
+
+.proc-item img {
+    /* --- CORREÇÃO DE ALINHAMENTO --- */
+    display: block;  /* Garante que a imagem se comporte como bloco */
+    margin: 0 auto 15px auto; /* O 'auto' nas laterais força a imagem para o centro */
+
+    /* --- ESTILO DO CÍRCULO (MANTIDO) --- */
+    border-radius: 50%;
+    border: 3px solid var(--primary-color);
+    width: 120px;
+    height: 120px;
+    padding: 15px;
+    object-fit: contain;
+    background-color: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+/* --- IMPORTANTE: Responsividade para Telas Menores --- */
+/* Em telas menores (tablets e celulares), 6 itens em uma linha ficam muito apertados. */
+/* Este código abaixo faz com que eles se ajustem automaticamente em telas menores. */
+
+@media (max-width: 992px) { /* Para tablets e notebooks pequenos */
+    .grid-procedimentos {
+        /* Muda para 3 colunas em 2 linhas */
+        grid-template-columns: repeat(3, 1fr); 
+    }
+}
+
+@media (max-width: 576px) { /* Para celulares */
+    .grid-procedimentos {
+        /* Muda para 2 colunas em 3 linhas */
+        grid-template-columns: repeat(2, 1fr); 
+    }
+}
 
 /* --- EQUIPE --- */
 .team-card { display: flex; background: var(--white); padding: 40px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-radius: 10px; align-items: center; gap: 30px; max-width: 800px; margin: 0 auto; }
@@ -243,10 +293,12 @@ footer .container { display: flex; flex-direction: column; align-items: center; 
 
 /* Melhorar a usabilidade dos itens na lista */
 .proc-item {
-    cursor: pointer; /* Mãozinha ao passar o mouse */
-    transition: transform 0.3s, box-shadow 0.3s;
-    padding: 20px;
-    border-radius: 8px;
+    display: flex;
+    flex-direction: column; /* Coloca um item embaixo do outro */
+    align-items: center;    /* Centraliza tudo horizontalmente */
+    justify-content: center;
+    text-align: center;
+    height: 100%; /* Garante que todos os cartões tenham a mesma altura */
 }
 
 .proc-item:hover {
