@@ -74,4 +74,52 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
+    // --- 5. LOGICA DO MODAL DE PROCEDIMENTOS ---
+    
+    // Seleciona os elementos
+    const modal = document.getElementById("modal-procedimento");
+    const modalImg = document.getElementById("modal-img");
+    const modalTitulo = document.getElementById("modal-titulo");
+    const modalDesc = document.getElementById("modal-desc");
+    const closeBtn = document.querySelector(".close-btn");
+    const procItems = document.querySelectorAll(".proc-item");
+
+    // Função para abrir o modal
+    procItems.forEach(item => {
+        item.addEventListener("click", () => {
+            // Pega os dados guardados no HTML (data-...)
+            const titulo = item.getAttribute("data-titulo");
+            const img = item.getAttribute("data-img");
+            const desc = item.getAttribute("data-desc");
+
+            // Coloca esses dados dentro do modal
+            modalTitulo.textContent = titulo;
+            modalImg.src = img;
+            modalDesc.textContent = desc;
+
+            // Mostra o modal
+            modal.classList.add("active");
+        });
+    });
+
+    // Função para fechar o modal
+    function fecharModal() {
+        modal.classList.remove("active");
+    }
+
+    // Fecha ao clicar no X
+    if(closeBtn) {
+        closeBtn.addEventListener("click", fecharModal);
+    }
+
+    // Fecha ao clicar fora da caixa branca (no fundo escuro)
+    window.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            fecharModal();
+        }
+    });
+    
+    // Torna a função fecharModal global para o botão "Agendar" usar
+    window.fecharModal = fecharModal;
 });

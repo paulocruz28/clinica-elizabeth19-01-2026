@@ -36,12 +36,11 @@
     </header>
 
     <section class="hero">
-        <a href="#contato" class="btn-hero">Agendar Avaliação</a>
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <h1>Sua beleza, nossa ciência.</h1>
             <p>Tratamentos estéticos personalizados para realçar o que você tem de melhor.</p>
-            <a href="#contato" class="btn-hero">Agendar Avaliação Agora 📲</a>
+            <a href="#contato" class="btn-hero">Agendar Avaliação</a>
         </div>
     </section>
 
@@ -82,29 +81,58 @@
         <div class="container">
             <h2 class="section-title">Procedimentos em Destaque</h2>
             <div class="grid-procedimentos">
-                <div class="proc-item">
+                <div class="proc-item" 
+                     data-titulo="Toxina Botulínica" 
+                     data-img="img/botox.png" 
+                     data-desc="O Botox relaxa a musculatura, suavizando rugas de expressão na testa e ao redor dos olhos. Duração média de 4 a 6 meses.">
                     <img src="img/botox.png" alt="Toxina Botulínica">
                     <h4>Toxina Botulínica</h4>
+                    <span class="ver-mais">+ Ver detalhes</span>
                 </div>
-                <div class="proc-item">
+
+                <div class="proc-item" 
+                     data-titulo="Preenchimento Labial" 
+                     data-img="img/labios.png" 
+                     data-desc="Realça o contorno, aumenta o volume e hidrata os lábios com ácido hialurônico. Resultado natural e imediato.">
                     <img src="img/labios.png" alt="Preenchimento Labial">
                     <h4>Preenchimento Labial</h4>
+                    <span class="ver-mais">+ Ver detalhes</span>
                 </div>
-                <div class="proc-item">
+
+                <div class="proc-item" 
+                     data-titulo="Depilação a Laser" 
+                     data-img="img/laser.png" 
+                     data-desc="Tecnologia de ponta para remoção definitiva dos pelos. Tratamento rápido, seguro e praticamente indolor.">
                     <img src="img/laser.png" alt="Depilação a Laser">
                     <h4>Depilação a Laser</h4>
+                    <span class="ver-mais">+ Ver detalhes</span>
                 </div>
-                <div class="proc-item">
+
+                <div class="proc-item" 
+                     data-titulo="Bioestimuladores" 
+                     data-img="img/bioestimulador.png" 
+                     data-desc="Estimula a produção natural de colágeno, combatendo a flacidez facial e corporal e melhorando a firmeza da pele.">
                     <img src="img/bioestimulador.png" alt="Bioestimuladores">
                     <h4>Bioestimuladores</h4>
+                    <span class="ver-mais">+ Ver detalhes</span>
                 </div>
-                <div class="proc-item">
+
+                <div class="proc-item" 
+                     data-titulo="Limpeza de Pele" 
+                     data-img="img/pele.png" 
+                     data-desc="Remoção profunda de impurezas, cravos e células mortas. Deixa a pele renovada, macia e pronta para hidratação.">
                     <img src="img/pele.png" alt="Limpeza de Pele">
                     <h4>Limpeza de Pele</h4>
+                    <span class="ver-mais">+ Ver detalhes</span>
                 </div>
-                <div class="proc-item">
+
+                <div class="proc-item" 
+                     data-titulo="Microagulhamento" 
+                     data-img="img/microagulhamento.png" 
+                     data-desc="Pequenas perfurações que estimulam a regeneração da pele. Ideal para cicatrizes de acne, manchas e poros dilatados.">
                     <img src="img/microagulhamento.png" alt="Microagulhamento">
                     <h4>Microagulhamento</h4>
+                    <span class="ver-mais">+ Ver detalhes</span>
                 </div>
             </div>
         </div>
@@ -213,7 +241,7 @@
                 <div class="contact-info">
                     <h3>Contatos</h3>
                     <p>📞 (85) 98224-5157</p>
-                    <p>📧 elizabethcruz@gmail.com</p>
+                    <p>📧 paulo19pj@gmail.com</p>
                     <p>📍 Rua: Algum lugar de Fortaleza - CE</p>
                     <p>⏰ Seg à Sex: 09h às 19h | Sáb: 09h às 13h</p>
                 </div>
@@ -250,6 +278,18 @@
     </footer>
 
     <script src="script.js"></script>
+    
+        <div id="modal-procedimento" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            
+            <img id="modal-img" src="" alt="">
+            <h3 id="modal-titulo">Titulo do Procedimento</h3>
+            <p id="modal-desc">Descrição do procedimento...</p>
+            
+            <a href="#contato" class="btn-hero" onclick="fecharModal()">Quero Agendar Este</a>
+        </div>
+    </div>
 
 </body>
 </html>

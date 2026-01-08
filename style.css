@@ -172,3 +172,93 @@ footer .container { display: flex; flex-direction: column; align-items: center; 
     display: block;
     box-shadow: 0 10px 20px rgba(0,0,0,0.15); /* Uma sombra para ficar elegante */
 }
+
+/* --- ESTILOS DO MODAL --- */
+
+/* Fundo escuro atrás do modal */
+.modal-overlay {
+    display: none; /* Começa invisível */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Quando estiver ativo (JS vai adicionar esta classe) */
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+/* A caixa branca do modal */
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+    position: relative;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-content img {
+    width: 80px;
+    margin: 0 auto 20px;
+}
+
+.modal-content h3 {
+    color: var(--primary-color);
+    font-family: var(--font-title);
+    margin-bottom: 15px;
+}
+
+.modal-content p {
+    margin-bottom: 25px;
+    font-size: 1rem;
+}
+
+/* Botão de fechar (X) */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #333;
+}
+.close-btn:hover { color: red; }
+
+/* Melhorar a usabilidade dos itens na lista */
+.proc-item {
+    cursor: pointer; /* Mãozinha ao passar o mouse */
+    transition: transform 0.3s, box-shadow 0.3s;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.proc-item:hover {
+    transform: translateY(-5px);
+    background-color: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.ver-mais {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    font-weight: bold;
+}
