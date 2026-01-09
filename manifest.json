@@ -1,0 +1,20 @@
+{
+  "name": "Clínica Elizabeth Cruz",
+  "short_name": "Elizabeth Cruz",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F5F0EB",
+  "theme_color": "#D4AF37",
+  "icons": [
+    {
+      "src": "img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
