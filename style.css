@@ -20,6 +20,15 @@ body {
     
     /* Adicione esta linha para o fundo geral ficar neutro também */
     background-color: #FDFBF7; /* Um tom bem clarinho, quase branco */
+
+   /* CORREÇÃO: Sem os traços na frente */
+    overflow-x: hidden; 
+    position: relative;
+}
+
+html {
+    scroll-behavior: smooth;
+    overflow-x: hidden; /* Adicione aqui também */
 }
 
 /* --- UTILITARIOS --- */
