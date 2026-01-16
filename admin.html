@@ -1,0 +1,28 @@
+<script>
+    async function carregarDadosAdmin() {
+        try {
+            const res = await fetch('/api/listar-contatos');
+            const agendamentos = await res.json();
+            
+            const corpoTabela = document.querySelector("#tabela-admin tbody");
+            corpoTabela.innerHTML = ""; 
+
+            agendamentos.reverse().forEach(cli => { // .reverse() para mostrar os novos primeiro
+                const linha = `
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 10px;">${cli.data_envio}</td>
+                        <td style="padding: 10px;">${cli.nome}</td>
+                        <td style="padding: 10px;">${cli.telefone}</td>
+                        <td style="padding: 10px;">${cli.mensagem}</td>
+                    </tr>
+                `;
+                corpoTabela.innerHTML += linha;
+            });
+        } catch (err) {
+            console.error("Erro ao carregar:", err);
+        }
+    }
+
+    // Executa a carga dos dados
+    carregarDadosAdmin();
+</script>

@@ -14,7 +14,7 @@ app.post('/api/salvar-contato', async (req, res) => {
     const { nome, telefone, mensagem } = req.body;
     
     // URL do seu Script do Google
-    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw2_TSSYDt0icZA200X4AxG7wtC2saqJNHhRYRqjwUO-ylGXlh8sa5CH2htKcJ5R_2nyg/exec"; 
+    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzW943XeOeG9MJNf7Mf5XDxb5w6E0jo12A-AAdZsH-YLhTVWkZ5ZEv1DRxZ5QsUKTv3-w/exec"; 
 
     try {
         await fetch(GOOGLE_URL, {
@@ -41,3 +41,27 @@ app.get('/api/listar-contatos', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+
+// Rota para acessar a tela do funcionário
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// Rota para o funcionário acessar a página
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// Rota que busca os dados reais da planilha
+app.get('/api/listar-contatos', async (req, res) => {
+    const GOOGLE_URL = "SEU_NOVO_LINK_DO_SCRIPT_AQUI"; 
+    
+    try {
+        const resposta = await fetch(GOOGLE_URL);
+        const dados = await resposta.json();
+        res.json(dados);
+    } catch (e) {
+        console.error("Erro ao ler planilha:", e);
+        res.status(500).json([]);
+    }
+});
