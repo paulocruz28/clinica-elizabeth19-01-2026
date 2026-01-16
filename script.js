@@ -150,30 +150,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function carregarAgendamentos() {
-    try {
-        const resposta = await fetch('/api/listar-contatos');
-        const agendamentos = await resposta.json();
-        
-        const corpoTabela = document.querySelector("#tabela-contatos tbody");
-        corpoTabela.innerHTML = ""; // Limpa a tabela
-
-        agendamentos.forEach(cli => {
-            const linha = `
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 10px;">${new Date(cli.data_envio).toLocaleString('pt-BR')}</td>
-                    <td style="padding: 10px;">${cli.nome}</td>
-                    <td style="padding: 10px;">${cli.telefone}</td>
-                    <td style="padding: 10px;">${cli.mensagem}</td>
-                </tr>
-            `;
-            corpoTabela.innerHTML += linha;
-        });
-    } catch (erro) {
-        console.error("Erro ao carregar lista:", erro);
+        try {
+            const resposta = await fetch('/api/listar-contatos');
+            const agendamentos = await resposta.json();
+            
+            const corpoTabela = document.querySelector("#tabela-contatos tbody");
+            
+            // SÓ TENTA PREENCHER SE A TABELA EXISTIR NO HTML
+            if (corpoTabela) {
+                corpoTabela.innerHTML = ""; 
+                agendamentos.forEach(cli => {
+                    const linha = `
+                        <tr style="border-bottom: 1px solid #ddd;">
+                            <td style="padding: 10px;">${new Date(cli.data_envio).toLocaleString('pt-BR')}</td>
+                            <td style="padding: 10px;">${cli.nome}</td>
+                            <td style="padding: 10px;">${cli.telefone}</td>
+                            <td style="padding: 10px;">${cli.mensagem}</td>
+                        </tr>
+                    `;
+                    corpoTabela.innerHTML += linha;
+                });
+            }
+        } catch (erro) {
+            console.error("Erro ao carregar lista:", erro);
+        }
     }
-}
 
-// Carrega a lista assim que a página abre
-window.onload = carregarAgendamentos;
+    // CHAMA A FUNÇÃO PARA CARREGAR OS DADOS
+    carregarAgendamentos();
     
-});
+}); // <--- ESTA CHAVE FECHA O DOMContentLoaded
