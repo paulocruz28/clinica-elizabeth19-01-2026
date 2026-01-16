@@ -13,13 +13,13 @@ app.get('/', (req, res) => {
 app.post('/api/salvar-contato', async (req, res) => {
     const { nome, telefone, mensagem } = req.body;
     
-    // COLE SUA URL DO GOOGLE ABAIXO
+    // URL do seu Script do Google
     const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw2_TSSYDt0icZA200X4AxG7wtC2saqJNHhRYRqjwUO-ylGXlh8sa5CH2htKcJ5R_2nyg/exec"; 
 
     try {
         await fetch(GOOGLE_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }, // Adicione esta linha
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 nome: nome,
                 telefone: telefone,
@@ -27,8 +27,14 @@ app.post('/api/salvar-contato', async (req, res) => {
                 data: new Date().toLocaleString("pt-BR")
             })
         });
+        res.json({ message: "Sucesso!", id: Date.now() });
+    } catch (e) {
+        console.error("Erro no servidor:", e);
+        res.status(500).json({ error: "Erro ao enviar" });
+    }
+}); // <--- Aqui faltava fechar o POST
 
-// Rota vazia para não dar erro no Script.js enquanto não temos a tabela
+// Rota para não dar erro no Script.js
 app.get('/api/listar-contatos', (req, res) => {
     res.json([]); 
 });
