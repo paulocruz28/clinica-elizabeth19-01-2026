@@ -26,8 +26,10 @@ app.post('/api/salvar-contato', async (req, res) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                nome, telefone, mensagem,
-                data: new Date().toLocaleString("pt-BR")
+                nome, 
+                telefone, 
+                mensagem,
+                data_envio: new Date().toLocaleString("pt-BR") // Mudei de 'data' para 'data_envio'
             })
         });
         res.json({ message: "Sucesso!" });
