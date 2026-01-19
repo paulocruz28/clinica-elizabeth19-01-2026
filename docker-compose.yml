@@ -1,0 +1,27 @@
+services:
+  banco_dados:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: admin_clinica
+      POSTGRES_PASSWORD: senha_secreta_123
+      POSTGRES_DB: sistema_clinica
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+  # ESTE BLOCO É O QUE ESTÁ FALTANDO NA SUA IMAGEM:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - banco_dados
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - banco_dados
