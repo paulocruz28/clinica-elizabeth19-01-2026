@@ -1,19 +1,40 @@
 const { Pool } = require('pg');
 
+// Configurações de conexão usando as variáveis de ambiente do docker-compose
 const pool = new Pool({
-  user: 'admin_clinica',
-  host: 'banco_dados', 
-  database: 'sistema_clinica',
-  password: 'senha_secreta_123',
-  port: 5432,
+    host: process.env.DB_HOST || 'db',
+    user: process.env.DB_USER || 'user_clinica',
+    password: process.env.DB_PASSWORD || 'password_clinica',
+    database: process.env.DB_NAME || 'clinica_db',
+    port: process.env.DB_PORT || 5432,
 });
 
-pool.connect((err, client, release) => {
-  if (err) {
-    return console.error('Erro ao conectar ao banco de dados:', err.stack);
-  }
-  console.log('Conexão com o Banco de Dados PostgreSQL estabelecida com sucesso!');
-  release();
-});
+// Teste de conexão inicial e criação da tabela se não existir
+const inicializarBanco = async () => {
+    try {
+        const client = await pool.connect();
+        console.log(">>> [STI] Conectado ao PostgreSQL com sucesso.");
+        
+        // Criação da tabela com a coluna 'status' e 'data_cadastro'
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS clientes (
+                id SERIAL PRIMARY KEY,
+                nome_completo TEXT NOT NULL,
+                telefone TEXT,
+                email TEXT,
+                mensagem TEXT,
+                status TEXT DEFAULT 'Pendente',
+                data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        client.release();
+    } catch (err) {
+        console.error("X [STI] Erro ao conectar ou inicializar o banco:", err.message);
+    }
+};
 
-module.exports = pool;
+inicializarBanco();
+
+module.exports = {
+    query: (text, params) => pool.query(text, params),
+};

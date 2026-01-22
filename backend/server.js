@@ -1,81 +1,78 @@
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const express = require('express');
+const cors = require('cors'); 
 const path = require('path');
-const db = require('./database'); // Conexão com o PostgreSQL
+const db = require('./database'); 
 
 const app = express();
 
-// Configurações
+// Configuração de CORS para permitir acesso do Admin (porta 8080)
+app.use(cors({ origin: '*' })); 
 app.use(express.json());
-app.use(express.static(__dirname));
 
-// URL do seu Google Apps Script (Para manter o legado enquanto migramos)
+const frontendPath = '/app/frontend';
+app.use(express.static(frontendPath));
+
 const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzW943XeOeG9MJNf7Mf5XDxb5w6E0jo12A-AAdZsH-YLhTVWkZ5ZEv1DRxZ5QsUKTv3-w/exec";
 
-// --- ROTAS DE TESTE E NAVEGAÇÃO ---
-
-// Rota Principal
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Rota da Área Administrativa
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
-});
-
-// Rota de teste para ver se o banco PostgreSQL responde
-app.get('/testar-banco', async (req, res) => {
-  try {
-    const resultado = await db.query('SELECT NOW()'); 
-    res.json({ mensagem: 'Conectado ao Postgres!', hora: resultado.rows[0].now });
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
-  }
-});
-
-// --- ROTAS DE AGENDAMENTO (INTEGRANDO COM GOOGLE E POSTGRES) ---
-
-// Rota para SALVAR agendamento
+// Rota para Salvar Agendamento
 app.post('/api/salvar-contato', async (req, res) => {
-    const { nome, telefone, mensagem } = req.body;
-    try {
-        // 1. Salva no Banco de Dados PostgreSQL (O seu novo "Cérebro")
-        const querySQL = 'INSERT INTO clientes (nome_completo, telefone, email, senha_hash) VALUES ($1, $2, $3, $4)';
-        await db.query(querySQL, [nome, telefone, 'vazio@temp.com', '123456']);
+    const { nome, telefone, mensagem, email } = req.body; 
+    console.log(`>>> [STI] Processando: ${nome}`);
 
-        // 2. Mantém o envio para o Google (Para você não perder o que já tinha)
-        await fetch(GOOGLE_URL, {
+    try {
+        // 1. Grava no Postgres Local
+        await db.query('INSERT INTO clientes (nome_completo, telefone, email, status) VALUES ($1, $2, $3, $4)', 
+        [nome, telefone, email || 'nao@informado.com', 'Pendente']);
+        console.log("v Gravado no Postgres.");
+
+        // 2. Envia para o Google com o TIMEOUT MANTIDO
+        console.log("-> Tentando sincronizar com Google Sheets...");
+        const response = await fetch(GOOGLE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                nome, 
-                telefone, 
-                mensagem,
-                data_envio: new Date().toLocaleString("pt-BR")
-            })
+            body: JSON.stringify({ nome, telefone, mensagem, email }),
+            redirect: 'follow',
+            signal: AbortSignal.timeout(10000) 
         });
 
-        res.json({ message: "Sucesso! Salvo no Postgres e no Google." });
-    } catch (e) {
-        console.error("Erro ao salvar:", e);
-        res.status(500).json({ error: "Erro ao processar agendamento" });
+        const resText = await response.text();
+        console.log(">>> [STI] Resposta do Google:", resText);
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("X [STI] Erro na sincronização Google:", err.message);
+        res.json({ success: true, warning: "Salvo localmente, erro na nuvem." });
     }
 });
 
-// Rota para LISTAR agendamentos no Admin (Busca do Google por enquanto)
+// Rota para o Admin Listar Contatos
 app.get('/api/listar-contatos', async (req, res) => {
     try {
-        const resposta = await fetch(GOOGLE_URL);
-        const dados = await resposta.json();
-        res.json(dados);
-    } catch (e) {
-        console.error("Erro ao buscar dados:", e);
-        res.json([]);
+        const resultado = await db.query('SELECT * FROM clientes ORDER BY id DESC');
+        res.json(resultado.rows);
+    } catch (err) {
+        console.error("Erro ao listar:", err.message);
+        res.status(500).json([]);
     }
 });
 
-// Inicialização do Servidor (Apenas uma vez no final!)
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+// Rota para Atualizar Status
+app.patch('/api/atualizar-status/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    try {
+        await db.query('UPDATE clientes SET status = $1 WHERE id = $2', [status, id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Erro ao atualizar." });
+    }
+});
 
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// Inicialização do Servidor (Mantendo seus logs)
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`=========================================`);
+    console.log(`BACKEND ATIVO NA PORTA ${PORT}`);
+    console.log(`=========================================`);
+});

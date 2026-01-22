@@ -2,26 +2,32 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel Administrativo - Clínica Elizabeth Cruz</title>
+    <title>Painel Admin - Clínica Elizabeth Cruz</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
-<body style="padding: 20px; background: #f4f4f4;">
+<body style="padding: 20px; background: #f4f4f4; font-family: sans-serif;">
 
     <script>
-        // 1. PROTEÇÃO DE ACESSO (Deve ser a primeira coisa no body)
         const senhaDefinida = "1234";
         const entrada = prompt("Área Restrita. Digite a senha de acesso:");
-
-        if (entrada !== senhaDefinida) {
-            alert("Senha incorreta!");
-            window.location.href = "/"; // Redireciona para a home
+        if (entrada === null || entrada !== senhaDefinida) {
+            alert("Acesso negado!");
+            window.location.replace("index.html");
         }
     </script>
 
-    <div class="container" style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 20px;">
-        <h2 style="color: #D4AF37; font-family: 'Playfair Display';">Agendamentos Recebidos</h2>
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: #D4AF37; font-family: 'Playfair Display'; margin: 0;">Agendamentos Recebidos</h2>
+            <div>
+                <button onclick="carregarDados()" style="background-color: #4285F4; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; font-weight: bold;">🔄 Atualizar Lista</button>
+                <button onclick="exportarParaPDF()" style="background-color: #2E7D32; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">📄 Exportar PDF</button>
+            </div>
+        </div>
         
-        <div style="overflow-x: auto; margin-top: 20px;">
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow-x: auto;">
             <table id="tabela-admin" style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #D4AF37; color: white;">
@@ -29,43 +35,105 @@
                         <th style="padding: 12px; text-align: left;">Cliente</th>
                         <th style="padding: 12px; text-align: left;">Telefone</th>
                         <th style="padding: 12px; text-align: left;">Mensagem</th>
+                        <th style="padding: 12px; text-align: left;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    </tbody>
+                    <tr><td colspan="5" style="text-align:center; padding: 20px;">Carregando agendamentos...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // 2. LÓGICA DE CARREGAMENTO DOS DADOS
-        async function carregarDadosAdmin() {
+        function getStatusColor(status) {
+            switch(status) {
+                case 'Atendido': return '#c8e6c9'; 
+                case 'Cancelado': return '#ffcdd2'; 
+                case 'Pendente': return '#fff9c4';  
+                default: return '#ffffff';
+            }
+        }
+
+        async function carregarDados() {
+            const corpoTabela = document.querySelector("#tabela-admin tbody");
             try {
-                const res = await fetch('/api/listar-contatos');
+                // Chamada para o seu backend na porta 3000
+                const res = await fetch('http://localhost:3000/api/listar-contatos');
                 const agendamentos = await res.json();
                 
-                const corpoTabela = document.querySelector("#tabela-admin tbody");
                 corpoTabela.innerHTML = ""; 
 
-                // Mostra os mais recentes no topo
-                agendamentos.reverse().forEach(cli => {
+                if (!agendamentos || agendamentos.length === 0) {
+                    corpoTabela.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:20px;'>Nenhum agendamento encontrado no banco local.</td></tr>";
+                    return;
+                }
+
+                agendamentos.forEach(cli => {
+                    const statusAtual = cli.status || 'Pendente';
+                    
+                    // Ajuste técnico nos nomes das colunas vindas do Postgres
+                    const dataBruta = cli.data_cadastro || cli.data || '---';
+                    const dataFormatada = dataBruta !== '---' ? new Date(dataBruta).toLocaleString('pt-BR') : '---';
+                    const nomeCliente = cli.nome_completo || cli.nome || 'Sem nome';
+                    
                     const linha = `
                         <tr style="border-bottom: 1px solid #ddd;">
-                            <td style="padding: 10px;">${cli.data_envio || '---'}</td>
-                            <td style="padding: 10px; font-weight: bold;">${cli.nome}</td>
+                            <td style="padding: 10px; font-size: 14px;">${dataFormatada}</td>
+                            <td style="padding: 10px; font-weight: bold;">${nomeCliente}</td>
                             <td style="padding: 10px;">${cli.telefone}</td>
-                            <td style="padding: 10px; color: #666;">${cli.mensagem}</td>
+                            <td style="padding: 10px; color: #666; font-size: 14px;">
+                                ${cli.email}<br><small>${cli.mensagem || ''}</small>
+                            </td>
+                            <td style="padding: 10px;">
+                                <select onchange="atualizarStatus(${cli.id}, this.value)" 
+                                        style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; background-color: ${getStatusColor(statusAtual)};">
+                                    <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                                    <option value="Atendido" ${statusAtual === 'Atendido' ? 'selected' : ''}>Atendido</option>
+                                    <option value="Cancelado" ${statusAtual === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+                                </select>
+                            </td>
                         </tr>
                     `;
                     corpoTabela.innerHTML += linha;
                 });
             } catch (err) {
                 console.error("Erro ao carregar:", err);
+                corpoTabela.innerHTML = "<tr><td colspan='5' style='text-align:center; color:red; padding:20px;'>Erro de conexão com o servidor (Porta 3000).</td></tr>";
             }
         }
 
-        // Executa a carga dos dados após a verificação da senha
-        carregarDadosAdmin();
+        async function atualizarStatus(id, novoStatus) {
+            if (!id) return;
+            try {
+                const res = await fetch(`http://localhost:3000/api/atualizar-status/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                
+                if (res.ok) {
+                    carregarDados(); 
+                }
+            } catch (err) {
+                console.error("Erro ao atualizar status:", err);
+            }
+        }
+
+        function exportarParaPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("Agendamentos - Clínica Elizabeth Cruz", 14, 20);
+            doc.autoTable({ 
+                html: '#tabela-admin', 
+                startY: 30, 
+                theme: 'striped', 
+                headStyles: { fillColor: [212, 175, 55] } 
+            });
+            doc.save("agendamentos_clinica.pdf");
+        }
+
+        carregarDados();
     </script>
 </body>
 </html>

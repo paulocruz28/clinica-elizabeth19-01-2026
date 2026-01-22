@@ -1,27 +1,51 @@
+version: '3.8'
+
 services:
-  banco_dados:
+  # Banco de Dados PostgreSQL
+  db:
     image: postgres:15
+    container_name: clinica_db
     restart: always
     environment:
-      POSTGRES_USER: admin_clinica
-      POSTGRES_PASSWORD: senha_secreta_123
-      POSTGRES_DB: sistema_clinica
-    volumes:
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      POSTGRES_USER: user_clinica
+      POSTGRES_PASSWORD: password_clinica
+      POSTGRES_DB: clinica_db
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
-  # ESTE BLOCO É O QUE ESTÁ FALTANDO NA SUA IMAGEM:
+  # Backend Node.js
   backend:
     build: ./backend
+    container_name: clinica_backend
+    restart: always
+    # RESOLUÇÃO DO ERRO EAI_AGAIN: Força o uso do DNS do Google para saída externa
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     ports:
       - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: user_clinica
+      DB_PASSWORD: password_clinica
+      DB_NAME: clinica_db
+      DB_PORT: 5432
     depends_on:
-      - banco_dados
+      - db
 
+  # Frontend Nginx
   frontend:
-    build: ./frontend
+    image: nginx:alpine
+    container_name: clinica_frontend
+    restart: always
     ports:
       - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
     depends_on:
-      - banco_dados
+      - backend
+
+volumes:
+  postgres_data:
