@@ -1,21 +1,32 @@
 const { Pool } = require('pg');
 
-// Configurações de conexão usando as variáveis de ambiente do docker-compose
-const pool = new Pool({
-    host: process.env.DB_HOST || 'db',
-    user: process.env.DB_USER || 'user_clinica',
-    password: process.env.DB_PASSWORD || 'password_clinica',
-    database: process.env.DB_NAME || 'clinica_db',
-    port: process.env.DB_PORT || 5432,
-});
+/**
+ * [STI] Configuração de Conexão Híbrida
+ * Se houver uma DATABASE_URL (Nuvem/Render), usa ela.
+ * Caso contrário, usa as configurações locais do Docker.
+ */
+const isProduction = process.env.DATABASE_URL;
 
-// Teste de conexão inicial e criação da tabela se não existir
+const dbConfig = isProduction 
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false } // Necessário para conexões seguras em nuvem
+      }
+    : {
+        host: process.env.DB_HOST || 'db',
+        user: process.env.DB_USER || 'user_clinica',
+        password: process.env.DB_PASSWORD || 'password_clinica',
+        database: process.env.DB_NAME || 'clinica_db',
+        port: process.env.DB_PORT || 5432,
+      };
+
+const pool = new Pool(dbConfig);
+
 const inicializarBanco = async () => {
     try {
         const client = await pool.connect();
-        console.log(">>> [STI] Conectado ao PostgreSQL com sucesso.");
+        console.log(`>>> [STI] Conexão ativa: ${isProduction ? 'NUVEM (Render)' : 'LOCAL (Docker)'}`);
         
-        // Criação da tabela com a coluna 'status' e 'data_cadastro'
         await client.query(`
             CREATE TABLE IF NOT EXISTS clientes (
                 id SERIAL PRIMARY KEY,
@@ -29,7 +40,7 @@ const inicializarBanco = async () => {
         `);
         client.release();
     } catch (err) {
-        console.error("X [STI] Erro ao conectar ou inicializar o banco:", err.message);
+        console.error("X [STI] FALHA NA CONEXÃO COM O BANCO:", err.message);
     }
 };
 
