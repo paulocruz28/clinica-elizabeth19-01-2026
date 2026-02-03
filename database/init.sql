@@ -1,34 +1,44 @@
--- Tabela de Clientes
-CREATE TABLE IF NOT EXISTS clientes (
-    id SERIAL PRIMARY KEY,
-    nome_completo VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    senha_hash VARCHAR(255) NOT NULL,
-    telefone VARCHAR(20),
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+const { Pool } = require('pg');
+const isProduction = process.env.DATABASE_URL;
 
--- Tabela de Funcionários (Para a área restrita)
-CREATE TABLE IF NOT EXISTS funcionarios (
-    id SERIAL PRIMARY KEY,
-    nome_completo VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    senha_hash VARCHAR(255) NOT NULL,
-    cargo VARCHAR(50) NOT NULL -- Ex: 'Biomédica', 'Recepcionista'
-);
+const dbConfig = isProduction 
+    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+    : {
+        host: process.env.DB_HOST || 'db',
+        user: process.env.DB_USER || 'user_clinica',
+        password: process.env.DB_PASSWORD || 'password_clinica',
+        database: process.env.DB_NAME || 'clinica_db',
+        port: process.env.DB_PORT || 5432,
+      };
 
--- Tabela de Agendamentos (Conecta Clientes e Funcionários)
-CREATE TABLE IF NOT EXISTS agendamentos (
-    id SERIAL PRIMARY KEY,
-    cliente_id INT REFERENCES clientes(id),
-    funcionario_id INT REFERENCES funcionarios(id),
-    data_hora TIMESTAMP NOT NULL,
-    procedimento VARCHAR(100) NOT NULL,
-    observacoes TEXT,
-    status VARCHAR(20) DEFAULT 'PENDENTE' -- PENDENTE, CONFIRMADO, CANCELADO
-);
+const pool = new Pool(dbConfig);
 
--- Inserindo um funcionário de teste (Login: admin / Senha: 123)
--- (Nota: Em produção a senha deve ser criptografada, isso é só teste)
-INSERT INTO funcionarios (nome_completo, email, senha_hash, cargo) 
-VALUES ('Elizabeth Cruz', 'admin@clinica.com', '123456', 'Dona');
+const inicializarBanco = async () => {
+    try {
+        const client = await pool.connect();
+        console.log(`>>> [STI] BANCO CONECTADO EM MODO: ${isProduction ? 'NUVEM' : 'LOCAL/DOCKER'}`);
+        
+        // [STI] Unificando a tabela 'clientes' para aceitar os dados do formulário e do dashboard
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS clientes (
+                id SERIAL PRIMARY KEY,
+                nome_completo TEXT NOT NULL,
+                cpf TEXT,
+                telefone TEXT,
+                email TEXT,
+                queixa TEXT,
+                mensagem TEXT,
+                status TEXT DEFAULT 'Pendente',
+                funcionario_resp TEXT DEFAULT 'Não Atribuído',
+                data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log(">>> [STI] Estrutura de tabelas 'clientes' validada.");
+        client.release();
+    } catch (err) {
+        console.error("X [STI] ERRO DE INICIALIZAÇÃO:", err.message);
+    }
+};
+
+inicializarBanco();
+module.exports = { query: (text, params) => pool.query(text, params) };

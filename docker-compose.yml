@@ -20,18 +20,19 @@ services:
     build: ./backend
     container_name: clinica_backend
     restart: always
-    # RESOLUÇÃO DO ERRO EAI_AGAIN: Força o uso do DNS do Google para saída externa
+    # [STI] Força DNS externo para o Google Sheets funcionar
     dns:
       - 8.8.8.8
       - 8.8.4.4
     ports:
       - "3000:3000"
     environment:
-      DB_HOST: db
-      DB_USER: user_clinica
-      DB_PASSWORD: password_clinica
-      DB_NAME: clinica_db
-      DB_PORT: 5432
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=user_clinica
+      - DB_PASSWORD=password_clinica
+      - DB_NAME=clinica_db
+      - DB_PORT=5432
     depends_on:
       - db
 

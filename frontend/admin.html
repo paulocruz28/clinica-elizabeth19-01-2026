@@ -2,138 +2,278 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel Admin - Clínica Elizabeth Cruz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Gestão [STI] - Elizabeth Cruz</title>
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .col-oculta { display: none !important; }
+        .btn-filtro { 
+            background: #eee; border: 1px solid #ccc; padding: 6px 12px; 
+            cursor: pointer; border-radius: 20px; font-size: 12px; transition: 0.3s;
+        }
+        .btn-filtro.ativo { background: #D4AF37; color: white; border-color: #B8952E; }
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;
+        }
+        .privacidade-toggle {
+            cursor: pointer; color: #4285F4; font-size: 0.9em; margin-left: 5px;
+        }
+        select.status-select { padding: 5px; border-radius: 5px; cursor: pointer; }
+        
+        /* Responsividade Básica */
+        @media (max-width: 768px) {
+            .dashboard-container { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
-<body style="padding: 20px; background: #f4f4f4; font-family: sans-serif;">
+<body style="padding: 20px; background: #f8f9fa; font-family: 'Segoe UI', sans-serif;">
 
     <script>
+        // [STI] Autenticação Simples (Front-end)
+        // ALERTA: Em produção, mover para Backend/JWT
         const senhaDefinida = "1234";
-        const entrada = prompt("Área Restrita. Digite a senha de acesso:");
+        const entrada = prompt("Área Restrita [STI]. Digite a senha de acesso:");
         if (entrada === null || entrada !== senhaDefinida) {
             alert("Acesso negado!");
             window.location.replace("index.html");
         }
     </script>
 
-    <div style="max-width: 1200px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="color: #D4AF37; font-family: 'Playfair Display'; margin: 0;">Agendamentos Recebidos</h2>
-            <div>
-                <button onclick="carregarDados()" style="background-color: #4285F4; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; font-weight: bold;">🔄 Atualizar Lista</button>
-                <button onclick="exportarParaPDF()" style="background-color: #2E7D32; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">📄 Exportar PDF</button>
+    <div style="max-width: 1300px; margin: 0 auto;">
+        
+        <header style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2 style="color: #D4AF37; margin: 0;">Gestão Elizabeth Cruz</h2>
+                    <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Controle avançado de pacientes [STI]</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="carregarDados()" style="background: #4285F4; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">🔄 Atualizar</button>
+                    <button onclick="exportarParaPDF()" style="background: #2E7D32; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">📄 PDF Seguro</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-container">
+            <div class="stat-card">
+                <h3 style="color: #D4AF37; margin-top: 0;">Resumo de Status</h3>
+                <canvas id="chartStatus"></canvas>
+            </div>
+            <div class="stat-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h1 id="totalAgendamentos" style="font-size: 48px; color: #333; margin: 0;">0</h1>
+                <p style="color: #666;">Total de Pacientes Cadastrados</p>
+                <hr style="width: 80%; border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                <div style="background: #f1f1f1; padding: 15px; border-radius: 8px; width: 100%;">
+                    <span style="font-size: 12px; font-weight: bold;">⚙️ Configurar Tabela:</span>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                        <button class="btn-filtro ativo" onclick="toggleColuna(0, this)">Data</button>
+                        <button class="btn-filtro ativo" onclick="toggleColuna(1, this)">CPF</button>
+                        <button class="btn-filtro ativo" onclick="toggleColuna(2, this)">Nome</button>
+                        <button class="btn-filtro ativo" onclick="toggleColuna(3, this)">Responsável</button>
+                        <button class="btn-filtro ativo" onclick="toggleColuna(5, this)">Mensagem</button>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow-x: auto;">
-            <table id="tabela-admin" style="width: 100%; border-collapse: collapse;">
+            <table id="tabela-admin" style="width: 100%; border-collapse: collapse; min-width: 800px;">
                 <thead>
                     <tr style="background: #D4AF37; color: white;">
-                        <th style="padding: 12px; text-align: left;">Data</th>
-                        <th style="padding: 12px; text-align: left;">Cliente</th>
-                        <th style="padding: 12px; text-align: left;">Telefone</th>
-                        <th style="padding: 12px; text-align: left;">Mensagem</th>
-                        <th style="padding: 12px; text-align: left;">Status</th>
+                        <th style="padding: 15px; text-align: left;">Data</th>
+                        <th style="padding: 15px; text-align: left;">CPF</th>
+                        <th style="padding: 15px; text-align: left;">Cliente</th>
+                        <th style="padding: 15px; text-align: left;">Responsável</th> 
+                        <th style="padding: 15px; text-align: left;">Contato</th>
+                        <th style="padding: 15px; text-align: left;">Mensagem</th>
+                        <th style="padding: 15px; text-align: center;">Status</th>
+                        <th style="padding: 15px; text-align: center;">Ações</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr><td colspan="5" style="text-align:center; padding: 20px;">Carregando agendamentos...</td></tr>
+                <tbody id="corpo-tabela">
+                    <tr><td colspan="8" style="text-align:center; padding: 40px;">Buscando dados no sistema...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        function getStatusColor(status) {
-            switch(status) {
-                case 'Atendido': return '#c8e6c9'; 
-                case 'Cancelado': return '#ffcdd2'; 
-                case 'Pendente': return '#fff9c4';  
-                default: return '#ffffff';
+        // [STI] CONFIGURAÇÃO DINÂMICA DA API
+        // Detecta automaticamente se é localhost, IP de rede ou domínio real
+        const API_BASE_URL = `http://${window.location.hostname}:3000`;
+
+        let meuGrafico = null;
+        const listaFuncionarios = ["Dra. Elizabeth", "Ana Paula", "João Paulo", "Gabriel"];
+
+        // Função de privacidade
+        function aplicarMascaraPrivacidade(texto, tipo) {
+            if (!texto || texto === '---' || texto === 'null' || texto === 'Não informado') return 'Não informado';
+            if (tipo === 'cpf') return texto.replace(/(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/, '***.$2.$3-**');
+            if (tipo === 'tel') return texto.replace(/(\d{2})(\d{5})(\d{4})/, '($1) *****-$3');
+            return texto;
+        }
+
+        // Função de toggle (Olho)
+        function toggleDado(btn, valorReal, tipo) {
+            const span = btn.previousElementSibling;
+            if (span.getAttribute('data-visivel') === 'false') {
+                span.innerText = valorReal;
+                span.setAttribute('data-visivel', 'true');
+                btn.innerText = '👁️‍🗨️';
+            } else {
+                span.innerText = aplicarMascaraPrivacidade(valorReal, tipo);
+                span.setAttribute('data-visivel', 'false');
+                btn.innerText = '👁️';
             }
         }
 
         async function carregarDados() {
-            const corpoTabela = document.querySelector("#tabela-admin tbody");
+            const corpoTabela = document.getElementById("corpo-tabela");
             try {
-                // Chamada para o seu backend na porta 3000
-                const res = await fetch('http://localhost:3000/api/listar-contatos');
+                // [STI] Fetch Dinâmico
+                const res = await fetch(`${API_BASE_URL}/api/listar-contatos`);
                 const agendamentos = await res.json();
                 
                 corpoTabela.innerHTML = ""; 
+                document.getElementById('totalAgendamentos').innerText = agendamentos.length;
 
-                if (!agendamentos || agendamentos.length === 0) {
-                    corpoTabela.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:20px;'>Nenhum agendamento encontrado no banco local.</td></tr>";
-                    return;
-                }
+                let statusCount = { 'Pendente': 0, 'Atendido': 0, 'Cancelado': 0 };
 
                 agendamentos.forEach(cli => {
                     const statusAtual = cli.status || 'Pendente';
-                    
-                    // Ajuste técnico nos nomes das colunas vindas do Postgres
-                    const dataBruta = cli.data_cadastro || cli.data || '---';
-                    const dataFormatada = dataBruta !== '---' ? new Date(dataBruta).toLocaleString('pt-BR') : '---';
-                    const nomeCliente = cli.nome_completo || cli.nome || 'Sem nome';
-                    
+                    statusCount[statusAtual] = (statusCount[statusAtual] || 0) + 1;
+
+                    const dataFormatada = new Date(cli.data_cadastro || cli.data).toLocaleDateString('pt-BR');
+                    const linkZap = `https://api.whatsapp.com/send?phone=55${cli.telefone.replace(/\D/g,'')}`;
+                    const valorCPF = (cli.cpf && cli.cpf !== 'null') ? cli.cpf : 'Não informado';
+
+                    let selectFunc = `<select onchange="vincularFuncionario(${cli.id}, this.value)" class="status-select">
+                        <option value="Não Atribuído" ${cli.funcionario_resp === 'Não Atribuído' ? 'selected' : ''}>-- Selecionar --</option>`;
+                    listaFuncionarios.forEach(f => {
+                        selectFunc += `<option value="${f}" ${cli.funcionario_resp === f ? 'selected' : ''}>${f}</option>`;
+                    });
+                    selectFunc += `</select>`;
+
                     const linha = `
-                        <tr style="border-bottom: 1px solid #ddd;">
-                            <td style="padding: 10px; font-size: 14px;">${dataFormatada}</td>
-                            <td style="padding: 10px; font-weight: bold;">${nomeCliente}</td>
-                            <td style="padding: 10px;">${cli.telefone}</td>
-                            <td style="padding: 10px; color: #666; font-size: 14px;">
-                                ${cli.email}<br><small>${cli.mensagem || ''}</small>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 15px; font-size: 0.85em;">${dataFormatada}</td>
+                            <td style="padding: 15px; font-family: monospace;">
+                                <span data-visivel="false">${aplicarMascaraPrivacidade(valorCPF, 'cpf')}</span>
+                                ${valorCPF !== 'Não informado' ? `<span class="privacidade-toggle" onclick="toggleDado(this, '${valorCPF}', 'cpf')">👁️</span>` : ''}
                             </td>
-                            <td style="padding: 10px;">
+                            <td style="padding: 15px; font-weight: bold;">${cli.nome_completo}</td>
+                            <td style="padding: 15px;">${selectFunc}</td> 
+                            <td style="padding: 15px;">
+                                <span data-visivel="false">${aplicarMascaraPrivacidade(cli.telefone, 'tel')}</span>
+                                <span class="privacidade-toggle" onclick="toggleDado(this, '${cli.telefone}', 'tel')">👁️</span>
+                            </td>
+                            <td style="padding: 15px; font-size: 0.85em; color: #666;">${cli.mensagem || '-'}</td>
+                            <td style="padding: 15px; text-align: center;">
                                 <select onchange="atualizarStatus(${cli.id}, this.value)" 
-                                        style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; background-color: ${getStatusColor(statusAtual)};">
+                                        class="status-select"
+                                        style="background: ${statusAtual === 'Atendido' ? '#d4edda' : (statusAtual === 'Cancelado' ? '#f8d7da' : '#fff3cd')};">
                                     <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
                                     <option value="Atendido" ${statusAtual === 'Atendido' ? 'selected' : ''}>Atendido</option>
                                     <option value="Cancelado" ${statusAtual === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
                                 </select>
                             </td>
+                            <td style="padding: 15px; text-align: center;">
+                                <a href="${linkZap}" target="_blank" style="text-decoration:none; margin-right: 10px;">💬</a>
+                                <span onclick="confirmarExclusao(${cli.id})" style="cursor:pointer; color: #ff4d4d;" title="Excluir">🗑️</span>
+                            </td>
                         </tr>
                     `;
                     corpoTabela.innerHTML += linha;
                 });
-            } catch (err) {
-                console.error("Erro ao carregar:", err);
-                corpoTabela.innerHTML = "<tr><td colspan='5' style='text-align:center; color:red; padding:20px;'>Erro de conexão com o servidor (Porta 3000).</td></tr>";
+                renderizarGrafico(statusCount);
+            } catch (err) { 
+                console.error(">>> [STI] Erro ao carregar dados:", err); 
+                corpoTabela.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">Erro ao conectar com o servidor.<br>Verifique se o Backend está rodando na porta 3000.</td></tr>`;
             }
         }
 
-        async function atualizarStatus(id, novoStatus) {
-            if (!id) return;
+        async function vincularFuncionario(id, funcionario) {
             try {
-                const res = await fetch(`http://localhost:3000/api/atualizar-status/${id}`, {
+                await fetch(`${API_BASE_URL}/api/vincular-funcionario/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ funcionario })
+                });
+                console.log(`>>> [STI] Funcionário vinculado: ${funcionario}`);
+            } catch (error) { console.error("Erro ao vincular:", error); }
+        }
+
+        async function atualizarStatus(id, novoStatus) {
+            try {
+                await fetch(`${API_BASE_URL}/api/atualizar-status/${id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: novoStatus })
                 });
-                
-                if (res.ok) {
-                    carregarDados(); 
-                }
-            } catch (err) {
-                console.error("Erro ao atualizar status:", err);
+                carregarDados(); 
+            } catch (error) { console.error("Erro ao atualizar status:", error); }
+        }
+
+        async function confirmarExclusao(id) {
+            if(confirm("Tem certeza que deseja excluir este registro LOCALMENTE? O backup no Google será mantido.")) {
+                try {
+                    await fetch(`${API_BASE_URL}/api/excluir-contato/${id}`, { method: 'DELETE' });
+                    carregarDados();
+                } catch (error) { console.error("Erro ao excluir:", error); }
             }
+        }
+
+        function renderizarGrafico(counts) {
+            const ctx = document.getElementById('chartStatus').getContext('2d');
+            if (meuGrafico) meuGrafico.destroy();
+            meuGrafico = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pendente', 'Atendido', 'Cancelado'],
+                    datasets: [{
+                        data: [counts['Pendente'], counts['Atendido'], counts['Cancelado']],
+                        backgroundColor: ['#fff3cd', '#d4edda', '#f8d7da'],
+                        borderWidth: 1
+                    }]
+                }
+            });
         }
 
         function exportarParaPDF() {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Agendamentos - Clínica Elizabeth Cruz", 14, 20);
+            const doc = new jsPDF('l', 'mm', 'a4');
+            doc.text("Relatório Geral de Pacientes - Elizabeth Cruz", 14, 15);
             doc.autoTable({ 
                 html: '#tabela-admin', 
-                startY: 30, 
-                theme: 'striped', 
-                headStyles: { fillColor: [212, 175, 55] } 
+                startY: 25, 
+                theme: 'grid',
+                headStyles: { fillColor: [212, 175, 55] }
             });
-            doc.save("agendamentos_clinica.pdf");
+            doc.save("relatorio_clinica.pdf");
         }
 
-        carregarDados();
+        function toggleColuna(index, btn) {
+            const table = document.getElementById("tabela-admin");
+            for (let i = 0; i < table.rows.length; i++) {
+                const cell = table.rows[i].cells[index];
+                if(cell) cell.classList.toggle("col-oculta");
+            }
+            btn.classList.toggle("ativo");
+        }
+
+        window.onload = carregarDados;
     </script>
 </body>
 </html>
