@@ -1,10 +1,11 @@
 // Aguarda o site carregar completamente
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Configuração da API [STI]
-    // Se estiver rodando localmente com Docker separado, a API está na porta 3000.
-    // window.location.hostname pega o IP ou 'localhost' automaticamente.
-    const API_BASE_URL = `http://${window.location.hostname}:3000`;
+    // --- CONFIGURAÇÃO DA API [STI] ---
+    // Esta lógica detecta automaticamente se o site está no Render ou no seu PC local.
+    const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? `http://localhost:3000` // Endereço para testes no seu PC
+        : `https://clinica-elizabeth-site-oficial.onrender.com`; // Endereço oficial do seu Backend no Render
 
     // --- 1. MENU MOBILE ---
     const hamburger = document.querySelector(".hamburger");
@@ -53,13 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
             console.log(">>> [STI] Enviando dados para:", `${API_BASE_URL}/api/salvar-contato`);
 
-            // Envia para a rota correta (Porta 3000)
+            // Envia para a rota correta configurada acima
             fetch(`${API_BASE_URL}/api/salvar-contato`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Erro na resposta do servidor');
+                return response.json();
+            })
             .then(data => {
                 // Sucesso!
                 alert("Agendamento enviado com sucesso! Entraremos em contato."); 
@@ -68,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 console.error('>>> [STI] Erro de Conexão:', error);
-                alert("Erro ao conectar com o servidor. Verifique se o Backend (Porta 3000) está ativo.");
+                alert("Erro ao conectar com o servidor. O agendamento não pôde ser concluído.");
             });
         });
     }
@@ -117,11 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeBtn = document.querySelector(".close-btn");
     const procItems = document.querySelectorAll(".proc-item");
 
-    if(modal) { // Verifica se o modal existe na página para evitar erros
-        // Função para abrir o modal
+    if(modal) { 
         procItems.forEach(item => {
             item.addEventListener("click", (e) => {
-                // Previne que cliques em elementos internos (como botões dentro do card) disparem o modal incorretamente
                 if(e.target.tagName === 'A' || e.target.classList.contains('read-more')) return;
 
                 const titulo = item.getAttribute("data-titulo");
@@ -137,28 +139,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Função para fechar o modal
         function fecharModal() {
             modal.classList.remove("active");
         }
 
-        // Fecha ao clicar no X
         if(closeBtn) {
             closeBtn.addEventListener("click", fecharModal);
         }
 
-        // Fecha ao clicar fora da caixa branca
         window.addEventListener("click", (e) => {
             if (e.target === modal) {
                 fecharModal();
             }
         });
         
-        // Torna global para o botão "Quero Agendar Este"
         window.fecharModal = fecharModal;
     }
 
-    // Função de máscara de CPF (para uso no HTML: oninput="mascaraCPF(this)")
+    // Função de máscara de CPF
     window.mascaraCPF = function(i) {
         let v = i.value;
         if(isNaN(v[v.length-1])){ 
