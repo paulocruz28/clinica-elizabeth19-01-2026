@@ -1,6 +1,6 @@
 /**
  * [STI] Servidor Backend - Clínica Elizabeth Cruz
- * Versão: 2.2 - Ajustada para Deploy (Porta Dinâmica e CORS)
+ * Versão: 2.3 - Integrada (Correção de CORS + Porta Dinâmica + Todas as Funções)
  */
 
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
@@ -11,12 +11,16 @@ const db = require('./database');
 
 const app = express();
 
-// [STI] Configuração de CORS robusta para permitir conexões externas
+// [STI] Configuração de CORS Ultra-Permissiva para evitar bloqueios no Deploy
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    credentials: true
 })); 
+
+// Responde a requisições de "preflight" (pergunta de segurança do navegador)
+app.options('*', cors());
 
 app.use(express.json());
 
@@ -33,7 +37,7 @@ app.post('/api/salvar-contato', async (req, res) => {
     console.log(`>>> [STI] Recebendo novo contato: ${nome}`);
 
     try {
-        // 1. Salva no Postgres (Detecta automaticamente se é Local ou Render)
+        // 1. Salva no Postgres (Detecta automaticamente se é Local ou Nuvem/Render)
         const sql = `INSERT INTO clientes (nome_completo, telefone, email, mensagem, cpf, queixa, status, funcionario_resp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`;
         await db.query(sql, [
             nome || 'Sem Nome', 
@@ -46,7 +50,7 @@ app.post('/api/salvar-contato', async (req, res) => {
             'Não Atribuído'
         ]);
         
-        // 2. Envia para o Google Sheets (Com Timeout de segurança)
+        // 2. Envia para o Google Sheets (Com Timeout de segurança de 10s)
         fetch(GOOGLE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -135,9 +139,9 @@ app.delete('/api/excluir-contato/:id', async (req, res) => {
 });
 
 // ==========================================
-// Inicialização do Servidor (Ajuste para NUVEM)
+// Inicialização do Servidor (Ajuste para NUVEM/RENDER)
 // ==========================================
-// O Render define a porta automaticamente. Usamos a 3000 apenas como reserva local.
+// O Render define a porta automaticamente via process.env.PORT.
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
