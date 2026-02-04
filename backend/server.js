@@ -1,6 +1,6 @@
 /**
  * [STI] Servidor Backend - Clínica Elizabeth Cruz
- * Versão: 2.1 - Refatorado (Correção de Duplicidade de Rotas)
+ * Versão: 2.2 - Ajustada para Deploy (Porta Dinâmica e CORS)
  */
 
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
@@ -11,11 +11,16 @@ const db = require('./database');
 
 const app = express();
 
-// [STI] Configuração de CORS permissiva para evitar bloqueios entre porta 8080 e 3000
-app.use(cors({ origin: '*' })); 
+// [STI] Configuração de CORS robusta para permitir conexões externas
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+})); 
+
 app.use(express.json());
 
-// [STI] Servindo arquivos estáticos (opcional, caso acesse via porta 3000 direto)
+// [STI] Servindo arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzW943XeOeG9MJNf7Mf5XDxb5w6E0jo12A-AAdZsH-YLhTVWkZ5ZEv1DRxZ5QsUKTv3-w/exec";
@@ -28,7 +33,7 @@ app.post('/api/salvar-contato', async (req, res) => {
     console.log(`>>> [STI] Recebendo novo contato: ${nome}`);
 
     try {
-        // 1. Salva no Postgres Local
+        // 1. Salva no Postgres (Detecta automaticamente se é Local ou Render)
         const sql = `INSERT INTO clientes (nome_completo, telefone, email, mensagem, cpf, queixa, status, funcionario_resp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`;
         await db.query(sql, [
             nome || 'Sem Nome', 
@@ -130,9 +135,11 @@ app.delete('/api/excluir-contato/:id', async (req, res) => {
 });
 
 // ==========================================
-// Inicialização do Servidor
+// Inicialização do Servidor (Ajuste para NUVEM)
 // ==========================================
-const PORT = 3000;
+// O Render define a porta automaticamente. Usamos a 3000 apenas como reserva local.
+const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
     console.log(`=========================================`);
     console.log(`>>> [STI] BACKEND ATIVO NA PORTA ${PORT}`);
