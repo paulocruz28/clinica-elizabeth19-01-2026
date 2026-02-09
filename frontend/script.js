@@ -1,11 +1,15 @@
-// Aguarda o site carregar completamente
+/**
+ * [STI] Script Frontend - Clínica Elizabeth Cruz
+ * Versão: 2.4 - Integrada (Conexão Nuvem + IMC + Modal + Máscaras)
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- CONFIGURAÇÃO DA API [STI] ---
-    // Esta lógica detecta automaticamente se o site está no Render ou no seu PC local.
+    // Detecta se está no seu PC ou no servidor oficial do Render
     const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? `http://localhost:3000` // Endereço para testes no seu PC
-        : `https://clinica-elizabeth-site-oficial.onrender.com`; // Endereço oficial do seu Backend no Render
+        ? `http://localhost:3000` 
+        : `https://clinica-elizabeth19-01-2026.onrender.com`;
 
     // --- 1. MENU MOBILE ---
     const hamburger = document.querySelector(".hamburger");
@@ -26,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 2. EFEITO DE SCROLL NO HEADER ---
     const header = document.querySelector(".header");
-    
     window.addEventListener("scroll", () => {
         if (window.scrollY > 50) {
             header.classList.add("scrolled");
@@ -36,12 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // --- 3. ENVIO REAL PARA O NODE.JS (ATUALIZADO) ---
+    // --- 3. ENVIO DE AGENDAMENTO (ATUALIZADO PARA RENDER) ---
     const form = document.getElementById("form-agendamento");
 
     if(form) {
         form.addEventListener("submit", (e) => {
-            e.preventDefault(); // Impede a página de recarregar
+            e.preventDefault(); 
             
             const dados = {
                 nome: document.getElementById("nome").value,
@@ -54,10 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
             console.log(">>> [STI] Enviando dados para:", `${API_BASE_URL}/api/salvar-contato`);
 
-            // Envia para a rota correta configurada acima
             fetch(`${API_BASE_URL}/api/salvar-contato`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors', // Necessário para o Render
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify(dados)
             })
             .then(response => {
@@ -65,10 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(data => {
-                // Sucesso!
                 alert("Agendamento enviado com sucesso! Entraremos em contato."); 
-                console.log("ID do registro:", data.id);
-                form.reset(); // Limpa os campos
+                form.reset(); 
             })
             .catch(error => {
                 console.error('>>> [STI] Erro de Conexão:', error);
@@ -78,9 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- 4. CALCULADORA IMC ---
+    // --- 4. CALCULADORA IMC (INTEGRAL) ---
     const btnCalcular = document.getElementById("btn-calcular");
-    
     if(btnCalcular) { 
         btnCalcular.addEventListener("click", () => {
             const peso = parseFloat(document.getElementById("peso").value);
@@ -113,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- 5. LOGICA DO MODAL DE PROCEDIMENTOS ---
+    // --- 5. LÓGICA DO MODAL DE PROCEDIMENTOS (INTEGRAL) ---
     const modal = document.getElementById("modal-procedimento");
     const modalImg = document.getElementById("modal-img");
     const modalTitulo = document.getElementById("modal-titulo");
@@ -139,24 +142,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        function fecharModal() {
-            modal.classList.remove("active");
-        }
+        const fecharModal = () => modal.classList.remove("active");
 
-        if(closeBtn) {
-            closeBtn.addEventListener("click", fecharModal);
-        }
-
-        window.addEventListener("click", (e) => {
-            if (e.target === modal) {
-                fecharModal();
-            }
-        });
-        
+        if(closeBtn) closeBtn.addEventListener("click", fecharModal);
+        window.addEventListener("click", (e) => { if (e.target === modal) fecharModal(); });
         window.fecharModal = fecharModal;
     }
 
-    // Função de máscara de CPF
+    // --- 6. MÁSCARA DE CPF ---
     window.mascaraCPF = function(i) {
         let v = i.value;
         if(isNaN(v[v.length-1])){ 

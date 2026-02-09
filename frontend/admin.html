@@ -3,274 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Gestão [STI] - Elizabeth Cruz</title>
+    <title>Gestão Clínica Elizabeth [STI]</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
         .col-oculta { display: none !important; }
-        .btn-filtro { 
-            background: #eee; border: 1px solid #ccc; padding: 6px 12px; 
-            cursor: pointer; border-radius: 20px; font-size: 12px; transition: 0.3s;
-        }
-        .btn-filtro.ativo { background: #D4AF37; color: white; border-color: #B8952E; }
-        .dashboard-container {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: white; padding: 20px; border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;
-        }
-        .privacidade-toggle {
-            cursor: pointer; color: #4285F4; font-size: 0.9em; margin-left: 5px;
-        }
-        select.status-select { padding: 5px; border-radius: 5px; cursor: pointer; }
-        
-        /* Responsividade Básica */
-        @media (max-width: 768px) {
-            .dashboard-container { grid-template-columns: 1fr; }
-        }
+        .card-gestao { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .privacidade-toggle { cursor: pointer; color: #4285F4; margin-left: 5px; }
+        .btn-filtro.ativo { background: #D4AF37; color: white; }
     </style>
 </head>
-<body style="padding: 20px; background: #f8f9fa; font-family: 'Segoe UI', sans-serif;">
+<body style="background: #f4f7f6; padding: 20px; font-family: 'Segoe UI', sans-serif;">
 
     <script>
-        // [STI] Autenticação Simples (Front-end)
-        // ALERTA: Em produção, mover para Backend/JWT
         const senhaDefinida = "1234";
-        const entrada = prompt("Área Restrita [STI]. Digite a senha de acesso:");
-        if (entrada === null || entrada !== senhaDefinida) {
-            alert("Acesso negado!");
-            window.location.replace("index.html");
-        }
+        const entrada = prompt("Área Restrita [STI]. Senha:");
+        if (entrada !== senhaDefinida) window.location.replace("index.html");
     </script>
 
     <div style="max-width: 1300px; margin: 0 auto;">
         
-        <header style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <div>
-                    <h2 style="color: #D4AF37; margin: 0;">Gestão Elizabeth Cruz</h2>
-                    <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Controle avançado de pacientes [STI]</p>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="carregarDados()" style="background: #4285F4; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">🔄 Atualizar</button>
-                    <button onclick="exportarParaPDF()" style="background: #2E7D32; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">📄 PDF Seguro</button>
-                </div>
+        <header class="card-gestao" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: #D4AF37; margin: 0;">Gestão Elizabeth Cruz</h2>
+                <p style="color: #666; margin: 5px 0 0 0;">Painel Administrativo STI</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="carregarDados()" style="background: #4285F4; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">🔄 Atualizar</button>
+                <button onclick="exportarParaPDF()" style="background: #2E7D32; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">📄 PDF Seguro</button>
             </div>
         </header>
 
-        <div class="dashboard-container">
-            <div class="stat-card">
-                <h3 style="color: #D4AF37; margin-top: 0;">Resumo de Status</h3>
-                <canvas id="chartStatus"></canvas>
+        <section class="card-gestao">
+            <h3 style="color: #D4AF37;">👥 Gestão de Funcionários</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="func-nome" placeholder="Nome do Funcionário" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; flex: 2;">
+                <input type="text" id="func-cargo" placeholder="Cargo/Função" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; flex: 1;">
+                <button onclick="adicionarFuncionario()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">➕ Adicionar</button>
             </div>
-            <div class="stat-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <h1 id="totalAgendamentos" style="font-size: 48px; color: #333; margin: 0;">0</h1>
-                <p style="color: #666;">Total de Pacientes Cadastrados</p>
-                <hr style="width: 80%; border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <div style="background: #f1f1f1; padding: 15px; border-radius: 8px; width: 100%;">
-                    <span style="font-size: 12px; font-weight: bold;">⚙️ Configurar Tabela:</span>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
-                        <button class="btn-filtro ativo" onclick="toggleColuna(0, this)">Data</button>
-                        <button class="btn-filtro ativo" onclick="toggleColuna(1, this)">CPF</button>
-                        <button class="btn-filtro ativo" onclick="toggleColuna(2, this)">Nome</button>
-                        <button class="btn-filtro ativo" onclick="toggleColuna(3, this)">Responsável</button>
-                        <button class="btn-filtro ativo" onclick="toggleColuna(5, this)">Mensagem</button>
-                    </div>
-                </div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead><tr style="border-bottom: 2px solid #D4AF37; text-align: left;"><th style="padding: 10px;">Nome</th><th style="padding: 10px;">Cargo</th><th style="padding: 10px;">Ações</th></tr></thead>
+                <tbody id="tabela-funcionarios"></tbody>
+            </table>
+        </section>
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 25px;">
+            <div class="card-gestao"><canvas id="chartStatus"></canvas></div>
+            <div class="card-gestao" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h1 id="totalAgendamentos" style="font-size: 48px; margin: 0;">0</h1>
+                <p>Pacientes Cadastrados</p>
             </div>
         </div>
-        
-        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow-x: auto;">
-            <table id="tabela-admin" style="width: 100%; border-collapse: collapse; min-width: 800px;">
+
+        <div class="card-gestao" style="overflow-x: auto;">
+            <table id="tabela-admin" style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #D4AF37; color: white;">
                         <th style="padding: 15px; text-align: left;">Data</th>
                         <th style="padding: 15px; text-align: left;">CPF</th>
-                        <th style="padding: 15px; text-align: left;">Cliente</th>
+                        <th style="padding: 15px; text-align: left;">Paciente</th>
                         <th style="padding: 15px; text-align: left;">Responsável</th> 
-                        <th style="padding: 15px; text-align: left;">Contato</th>
-                        <th style="padding: 15px; text-align: left;">Mensagem</th>
                         <th style="padding: 15px; text-align: center;">Status</th>
                         <th style="padding: 15px; text-align: center;">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="corpo-tabela">
-                    <tr><td colspan="8" style="text-align:center; padding: 40px;">Buscando dados no sistema...</td></tr>
-                </tbody>
+                <tbody id="corpo-tabela"></tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // [STI] CONFIGURAÇÃO DINÂMICA DA API
-        // Detecta automaticamente se é localhost, IP de rede ou domínio real
-        const API_BASE_URL = `http://${window.location.hostname}:3000`;
-
+        const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://clinica-elizabeth19-01-2026.onrender.com';
         let meuGrafico = null;
-        const listaFuncionarios = ["Dra. Elizabeth", "Ana Paula", "João Paulo", "Gabriel"];
-
-        // Função de privacidade
-        function aplicarMascaraPrivacidade(texto, tipo) {
-            if (!texto || texto === '---' || texto === 'null' || texto === 'Não informado') return 'Não informado';
-            if (tipo === 'cpf') return texto.replace(/(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/, '***.$2.$3-**');
-            if (tipo === 'tel') return texto.replace(/(\d{2})(\d{5})(\d{4})/, '($1) *****-$3');
-            return texto;
-        }
-
-        // Função de toggle (Olho)
-        function toggleDado(btn, valorReal, tipo) {
-            const span = btn.previousElementSibling;
-            if (span.getAttribute('data-visivel') === 'false') {
-                span.innerText = valorReal;
-                span.setAttribute('data-visivel', 'true');
-                btn.innerText = '👁️‍🗨️';
-            } else {
-                span.innerText = aplicarMascaraPrivacidade(valorReal, tipo);
-                span.setAttribute('data-visivel', 'false');
-                btn.innerText = '👁️';
-            }
-        }
+        let listaFuncionariosGlobal = [];
 
         async function carregarDados() {
-            const corpoTabela = document.getElementById("corpo-tabela");
             try {
-                // [STI] Fetch Dinâmico
-                const res = await fetch(`${API_BASE_URL}/api/listar-contatos`);
-                const agendamentos = await res.json();
-                
-                corpoTabela.innerHTML = ""; 
-                document.getElementById('totalAgendamentos').innerText = agendamentos.length;
+                // 1. Carregar Funcionários
+                const resFunc = await fetch(`${API_BASE_URL}/api/funcionarios`);
+                listaFuncionariosGlobal = await resFunc.json();
+                renderizarTabelaFuncionarios();
 
+                // 2. Carregar Contatos
+                const resCont = await fetch(`${API_BASE_URL}/api/listar-contatos`);
+                const agendamentos = await resCont.json();
+                
+                const corpo = document.getElementById("corpo-tabela");
+                corpo.innerHTML = "";
+                document.getElementById('totalAgendamentos').innerText = agendamentos.length;
                 let statusCount = { 'Pendente': 0, 'Atendido': 0, 'Cancelado': 0 };
 
                 agendamentos.forEach(cli => {
                     const statusAtual = cli.status || 'Pendente';
-                    statusCount[statusAtual] = (statusCount[statusAtual] || 0) + 1;
+                    statusCount[statusAtual]++;
 
-                    const dataFormatada = new Date(cli.data_cadastro || cli.data).toLocaleDateString('pt-BR');
-                    const linkZap = `https://api.whatsapp.com/send?phone=55${cli.telefone.replace(/\D/g,'')}`;
-                    const valorCPF = (cli.cpf && cli.cpf !== 'null') ? cli.cpf : 'Não informado';
-
-                    let selectFunc = `<select onchange="vincularFuncionario(${cli.id}, this.value)" class="status-select">
-                        <option value="Não Atribuído" ${cli.funcionario_resp === 'Não Atribuído' ? 'selected' : ''}>-- Selecionar --</option>`;
-                    listaFuncionarios.forEach(f => {
-                        selectFunc += `<option value="${f}" ${cli.funcionario_resp === f ? 'selected' : ''}>${f}</option>`;
+                    let selectFunc = `<select onchange="vincularFuncionario(${cli.id}, this.value)" style="padding:5px; border-radius:5px;">
+                        <option value="Não Atribuído">-- Selecionar --</option>`;
+                    listaFuncionariosGlobal.forEach(f => {
+                        selectFunc += `<option value="${f.nome}" ${cli.funcionario_resp === f.nome ? 'selected' : ''}>${f.nome}</option>`;
                     });
                     selectFunc += `</select>`;
 
-                    const linha = `
+                    corpo.innerHTML += `
                         <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 15px; font-size: 0.85em;">${dataFormatada}</td>
-                            <td style="padding: 15px; font-family: monospace;">
-                                <span data-visivel="false">${aplicarMascaraPrivacidade(valorCPF, 'cpf')}</span>
-                                ${valorCPF !== 'Não informado' ? `<span class="privacidade-toggle" onclick="toggleDado(this, '${valorCPF}', 'cpf')">👁️</span>` : ''}
-                            </td>
+                            <td style="padding: 15px;">${new Date(cli.data_cadastro).toLocaleDateString('pt-BR')}</td>
+                            <td style="padding: 15px; font-family: monospace;">***.***.***-**</td>
                             <td style="padding: 15px; font-weight: bold;">${cli.nome_completo}</td>
                             <td style="padding: 15px;">${selectFunc}</td> 
-                            <td style="padding: 15px;">
-                                <span data-visivel="false">${aplicarMascaraPrivacidade(cli.telefone, 'tel')}</span>
-                                <span class="privacidade-toggle" onclick="toggleDado(this, '${cli.telefone}', 'tel')">👁️</span>
-                            </td>
-                            <td style="padding: 15px; font-size: 0.85em; color: #666;">${cli.mensagem || '-'}</td>
                             <td style="padding: 15px; text-align: center;">
-                                <select onchange="atualizarStatus(${cli.id}, this.value)" 
-                                        class="status-select"
-                                        style="background: ${statusAtual === 'Atendido' ? '#d4edda' : (statusAtual === 'Cancelado' ? '#f8d7da' : '#fff3cd')};">
+                                <select onchange="atualizarStatus(${cli.id}, this.value)" style="padding:5px; border-radius:5px; background: ${statusAtual === 'Atendido' ? '#d4edda' : '#fff3cd'}">
                                     <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
                                     <option value="Atendido" ${statusAtual === 'Atendido' ? 'selected' : ''}>Atendido</option>
                                     <option value="Cancelado" ${statusAtual === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
                                 </select>
                             </td>
                             <td style="padding: 15px; text-align: center;">
-                                <a href="${linkZap}" target="_blank" style="text-decoration:none; margin-right: 10px;">💬</a>
-                                <span onclick="confirmarExclusao(${cli.id})" style="cursor:pointer; color: #ff4d4d;" title="Excluir">🗑️</span>
+                                <span onclick="confirmarExclusao(${cli.id})" style="cursor:pointer; color: red;">🗑️</span>
                             </td>
-                        </tr>
-                    `;
-                    corpoTabela.innerHTML += linha;
+                        </tr>`;
                 });
                 renderizarGrafico(statusCount);
-            } catch (err) { 
-                console.error(">>> [STI] Erro ao carregar dados:", err); 
-                corpoTabela.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">Erro ao conectar com o servidor.<br>Verifique se o Backend está rodando na porta 3000.</td></tr>`;
-            }
+            } catch (err) { console.error("Erro STI:", err); }
+        }
+
+        function renderizarTabelaFuncionarios() {
+            const corpo = document.getElementById("tabela-funcionarios");
+            corpo.innerHTML = "";
+            listaFuncionariosGlobal.forEach(f => {
+                corpo.innerHTML += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">${f.nome}</td><td style="padding: 10px;">${f.cargo}</td><td style="padding: 10px;"><button onclick="excluirFuncionario(${f.id})" style="border:none; background:none; color:red; cursor:pointer;">🗑️</button></td></tr>`;
+            });
+        }
+
+        async function adicionarFuncionario() {
+            const nome = document.getElementById("func-nome").value;
+            const cargo = document.getElementById("func-cargo").value;
+            if(!nome || !cargo) return alert("Preencha tudo!");
+            await fetch(`${API_BASE_URL}/api/funcionarios`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nome, cargo }) });
+            document.getElementById("func-nome").value = ""; document.getElementById("func-cargo").value = "";
+            carregarDados();
+        }
+
+        async function excluirFuncionario(id) {
+            if(confirm("Remover funcionário?")) { await fetch(`${API_BASE_URL}/api/funcionarios/${id}`, { method: 'DELETE' }); carregarDados(); }
         }
 
         async function vincularFuncionario(id, funcionario) {
-            try {
-                await fetch(`${API_BASE_URL}/api/vincular-funcionario/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ funcionario })
-                });
-                console.log(`>>> [STI] Funcionário vinculado: ${funcionario}`);
-            } catch (error) { console.error("Erro ao vincular:", error); }
+            await fetch(`${API_BASE_URL}/api/vincular-funcionario/${id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ funcionario }) });
         }
 
-        async function atualizarStatus(id, novoStatus) {
-            try {
-                await fetch(`${API_BASE_URL}/api/atualizar-status/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: novoStatus })
-                });
-                carregarDados(); 
-            } catch (error) { console.error("Erro ao atualizar status:", error); }
+        async function atualizarStatus(id, status) {
+            await fetch(`${API_BASE_URL}/api/atualizar-status/${id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status }) });
+            carregarDados();
         }
 
         async function confirmarExclusao(id) {
-            if(confirm("Tem certeza que deseja excluir este registro LOCALMENTE? O backup no Google será mantido.")) {
-                try {
-                    await fetch(`${API_BASE_URL}/api/excluir-contato/${id}`, { method: 'DELETE' });
-                    carregarDados();
-                } catch (error) { console.error("Erro ao excluir:", error); }
-            }
+            if(confirm("Excluir agendamento?")) { await fetch(`${API_BASE_URL}/api/excluir-contato/${id}`, { method: 'DELETE' }); carregarDados(); }
         }
 
         function renderizarGrafico(counts) {
             const ctx = document.getElementById('chartStatus').getContext('2d');
             if (meuGrafico) meuGrafico.destroy();
-            meuGrafico = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Pendente', 'Atendido', 'Cancelado'],
-                    datasets: [{
-                        data: [counts['Pendente'], counts['Atendido'], counts['Cancelado']],
-                        backgroundColor: ['#fff3cd', '#d4edda', '#f8d7da'],
-                        borderWidth: 1
-                    }]
-                }
-            });
-        }
-
-        function exportarParaPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            doc.text("Relatório Geral de Pacientes - Elizabeth Cruz", 14, 15);
-            doc.autoTable({ 
-                html: '#tabela-admin', 
-                startY: 25, 
-                theme: 'grid',
-                headStyles: { fillColor: [212, 175, 55] }
-            });
-            doc.save("relatorio_clinica.pdf");
-        }
-
-        function toggleColuna(index, btn) {
-            const table = document.getElementById("tabela-admin");
-            for (let i = 0; i < table.rows.length; i++) {
-                const cell = table.rows[i].cells[index];
-                if(cell) cell.classList.toggle("col-oculta");
-            }
-            btn.classList.toggle("ativo");
+            meuGrafico = new Chart(ctx, { type: 'doughnut', data: { labels: ['Pendente', 'Atendido', 'Cancelado'], datasets: [{ data: [counts['Pendente'], counts['Atendido'], counts['Cancelado']], backgroundColor: ['#fff3cd', '#d4edda', '#f8d7da'] }] } });
         }
 
         window.onload = carregarDados;
