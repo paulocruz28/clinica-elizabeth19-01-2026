@@ -1,12 +1,13 @@
 /**
  * [STI] Script Frontend - Clínica Elizabeth Cruz
- * Versão: 2.4 - Integrada (Conexão Nuvem + IMC + Modal + Máscaras)
+ * Versão: 2.9 - UNIFICADA (Correção de Rede + Integridade STI)
+ * Descrição: Fusão de Protocolos HTTPS com IMC, Modal, Máscaras e Menu.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- CONFIGURAÇÃO DA API [STI] ---
-    // Detecta se está no seu PC ou no servidor oficial do Render
+    // --- [STI] CONFIGURAÇÃO DA API ---
+    // Detecta se está local (3000) ou no Render (HTTPS sem porta 3000)
     const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? `http://localhost:3000` 
         : `https://clinica-elizabeth19-01-2026.onrender.com`;
@@ -23,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.querySelectorAll(".nav-link").forEach(n => n.addEventListener("click", () => {
-        hamburger.classList.remove("active");
-        navMenu.classList.remove("active");
+        if(hamburger) hamburger.classList.remove("active");
+        if(navMenu) navMenu.classList.remove("active");
     }));
 
 
@@ -32,14 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const header = document.querySelector(".header");
     window.addEventListener("scroll", () => {
         if (window.scrollY > 50) {
-            header.classList.add("scrolled");
+            if(header) header.classList.add("scrolled");
         } else {
-            header.classList.remove("scrolled");
+            if(header) header.classList.remove("scrolled");
         }
     });
 
 
-    // --- 3. ENVIO DE AGENDAMENTO (ATUALIZADO PARA RENDER) ---
+    // --- 3. ENVIO DE AGENDAMENTO (CONEXÃO SEGURA STI) ---
     const form = document.getElementById("form-agendamento");
 
     if(form) {
@@ -59,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             fetch(`${API_BASE_URL}/api/salvar-contato`, {
                 method: 'POST',
-                mode: 'cors', // Necessário para o Render
+                mode: 'cors',
                 headers: { 
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
@@ -67,22 +68,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(dados)
             })
             .then(response => {
-                if (!response.ok) throw new Error('Erro na resposta do servidor');
+                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
                 return response.json();
             })
             .then(data => {
                 alert("Agendamento enviado com sucesso! Entraremos em contato."); 
+                console.log(">>> [STI] Resposta Sucesso:", data);
                 form.reset(); 
             })
             .catch(error => {
                 console.error('>>> [STI] Erro de Conexão:', error);
-                alert("Erro ao conectar com o servidor. O agendamento não pôde ser concluído.");
+                alert(`Erro de conexão com o servidor STI.\nLocal da tentativa: ${API_BASE_URL}\n\nVerifique se o backend no Render está 'Live'.`);
             });
         });
     }
 
 
-    // --- 4. CALCULADORA IMC (INTEGRAL) ---
+    // --- 4. CALCULADORA IMC (INTEGRAL ODS 3) ---
     const btnCalcular = document.getElementById("btn-calcular");
     if(btnCalcular) { 
         btnCalcular.addEventListener("click", () => {
@@ -106,17 +108,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     cor = "#c0392b"; 
                 }
 
-                resultado.style.color = cor;
-                resultado.innerHTML = `IMC: ${imc.toFixed(2)} - ${classificacao}`;
+                if(resultado) {
+                    resultado.style.color = cor;
+                    resultado.innerHTML = `IMC: ${imc.toFixed(2)} - ${classificacao}`;
+                }
             } else {
-                resultado.innerHTML = "Por favor, preencha todos os campos.";
-                resultado.style.color = "red";
+                if(resultado) {
+                    resultado.innerHTML = "Por favor, preencha todos os campos.";
+                    resultado.style.color = "red";
+                }
             }
         });
     }
 
 
-    // --- 5. LÓGICA DO MODAL DE PROCEDIMENTOS (INTEGRAL) ---
+    // --- 5. LÓGICA DO MODAL DE PROCEDIMENTOS (COMPLETA) ---
     const modal = document.getElementById("modal-procedimento");
     const modalImg = document.getElementById("modal-img");
     const modalTitulo = document.getElementById("modal-titulo");
@@ -134,22 +140,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const desc = item.getAttribute("data-desc");
 
                 if(titulo && desc) {
-                    modalTitulo.textContent = titulo;
-                    modalImg.src = img;
-                    modalDesc.textContent = desc;
+                    if(modalTitulo) modalTitulo.textContent = titulo;
+                    if(modalImg) modalImg.src = img;
+                    if(modalDesc) modalDesc.textContent = desc;
                     modal.classList.add("active");
                 }
             });
         });
 
         const fecharModal = () => modal.classList.remove("active");
-
         if(closeBtn) closeBtn.addEventListener("click", fecharModal);
         window.addEventListener("click", (e) => { if (e.target === modal) fecharModal(); });
         window.fecharModal = fecharModal;
     }
 
-    // --- 6. MÁSCARA DE CPF ---
+
+    // --- 6. MÁSCARA DE CPF E UTILITÁRIOS ---
     window.mascaraCPF = function(i) {
         let v = i.value;
         if(isNaN(v[v.length-1])){ 
